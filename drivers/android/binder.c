@@ -2722,7 +2722,7 @@ static int binder_ioctl_write_read(struct file *filp,
 		ret = -EINVAL;
 		goto out;
 	}
-	if (copy_from_user(&bwr, ubuf, sizeof(bwr))) {
+	if (copy_from_user_preempt_disabled(&bwr, ubuf, sizeof(bwr))) {
 		ret = -EFAULT;
 		goto out;
 	}
@@ -2740,7 +2740,7 @@ static int binder_ioctl_write_read(struct file *filp,
 		trace_binder_write_done(ret);
 		if (ret < 0) {
 			bwr.read_consumed = 0;
-			if (copy_to_user(ubuf, &bwr, sizeof(bwr)))
+			if (copy_to_user_preempt_disabled(ubuf, &bwr, sizeof(bwr)))
 				ret = -EFAULT;
 			goto out;
 		}
@@ -2754,7 +2754,7 @@ static int binder_ioctl_write_read(struct file *filp,
 		if (!list_empty(&proc->todo))
 			wake_up_interruptible(&proc->wait);
 		if (ret < 0) {
-			if (copy_to_user(ubuf, &bwr, sizeof(bwr)))
+			if (copy_to_user_preempt_disabled(ubuf, &bwr, sizeof(bwr)))
 				ret = -EFAULT;
 			goto out;
 		}
@@ -2764,7 +2764,7 @@ static int binder_ioctl_write_read(struct file *filp,
 		     proc->pid, thread->pid,
 		     (u64)bwr.write_consumed, (u64)bwr.write_size,
 		     (u64)bwr.read_consumed, (u64)bwr.read_size);
-	if (copy_to_user(ubuf, &bwr, sizeof(bwr))) {
+	if (copy_to_user_preempt_disabled(ubuf, &bwr, sizeof(bwr))) {
 		ret = -EFAULT;
 		goto out;
 	}
@@ -2842,7 +2842,7 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			goto err;
 		break;
 	case BINDER_SET_MAX_THREADS:
-		if (copy_from_user(&proc->max_threads, ubuf, sizeof(proc->max_threads))) {
+		if (copy_from_user_preempt_disabled(&proc->max_threads, ubuf, sizeof(proc->max_threads))) {
 			ret = -EINVAL;
 			goto err;
 		}
@@ -2865,7 +2865,7 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			ret = -EINVAL;
 			goto err;
 		}
-		if (put_user(BINDER_CURRENT_PROTOCOL_VERSION,
+		if (put_user_preempt_disabled(BINDER_CURRENT_PROTOCOL_VERSION,
 			     &ver->protocol_version)) {
 			ret = -EINVAL;
 			goto err;
@@ -3293,10 +3293,10 @@ static void binder_deferred_func(struct work_struct *work)
 
 		if (defer & BINDER_DEFERRED_RELEASE)
 			binder_deferred_release(proc); /* frees proc */
+
 			trace_binder_unlock(__func__);
 			mutex_unlock(&binder_main_lock);
 			preempt_enable_no_resched();
-
 		if (files)
 			put_files_struct(files);
 	} while (proc);
