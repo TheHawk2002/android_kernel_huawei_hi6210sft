@@ -362,7 +362,7 @@ static int alloc_empty_pages(struct vm_area_struct *vma, int numpgs)
 	return 0;
 }
 
-static struct vm_operations_struct privcmd_vm_ops;
+static const struct vm_operations_struct privcmd_vm_ops;
 
 static long privcmd_ioctl_mmap_batch(void __user *udata, int version)
 {
